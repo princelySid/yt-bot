@@ -1,0 +1,18 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pytest = "*"
+pylint = "*"
+
+[packages]
+python-dotenv = "*"
+google-api-python-client = "*"
+yt-bot = {editable = true,path = "."}
+loguru = "*"
+pretty-errors = "*"
+
+[requires]
+python_version = "3.8"
