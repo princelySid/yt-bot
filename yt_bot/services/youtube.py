@@ -32,7 +32,7 @@ class YoutubeService:
                 (default: {'snippet'})
 
         Returns:
-            HttpRequest -- subcription details
+            list[dict] -- all the subscriptions of a channel
         '''
         subscriptions = self.service.subscriptions()
         request = subscriptions.list(
