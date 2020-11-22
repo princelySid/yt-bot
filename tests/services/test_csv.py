@@ -31,9 +31,9 @@ def raw_data():
         'Joyce Achieng\' TV,UC41aN7k5-dhOWH2uDM5wU8A,2017-01-02T15:52:01.000Z\n'
         )
 
-def test_list_dict_to_csv(tmpdir, list_dict, raw_data):
+def test_write_list_dict_to_csv(tmpdir, list_dict, raw_data):
     filepath = tmpdir.join('subcriptions')
-    CSVService.list_dict_to_csv(list_dict, filepath)
+    CSVService.write_list_dict_to_csv(list_dict, filepath)
     with open(filepath, 'r') as file:
         data = file.read()
         assert data == raw_data

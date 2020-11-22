@@ -3,7 +3,7 @@ import csv
 
 class CSVService:
     @staticmethod
-    def list_dict_to_csv(list_dict, filepath):
+    def write_list_dict_to_csv(list_dict, filepath):
         '''
         Saves a list of dictionaries to a CSV file
 
