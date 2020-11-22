@@ -2,12 +2,6 @@ from yt_bot.services import YoutubeService
 from unittest import mock
 from yt_bot.config import logger
 
-channel_detials = [{
-    'name':'test_title',
-    'description':'test_description',
-    'channel_id': 1,
-    'date_subscribed':'12.30',
-}]
 class MockList:
     @staticmethod
     def execute():
@@ -44,6 +38,15 @@ class MockService:
 
 @mock.patch('yt_bot.services.YoutubeService.service', MockService)
 def test_get_playlist_items():
+    '''
+    Ensuring output of given but the subscriptions list is properly parsed.
+    '''
+    channel_detials = [{
+    'name':'test_title',
+    'description':'test_description',
+    'channel_id': 1,
+    'date_subscribed':'12.30',
+    }]
     yt = YoutubeService()
     result = yt.get_channel_subscriptions(1)
     assert result == channel_detials
