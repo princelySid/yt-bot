@@ -16,6 +16,7 @@ pretty-errors = "*"
 sqlalchemy = "*"
 sqlalchemy-utils = "*"
 python-dateutil = "*"
+feedparser = "*"
 
 [requires]
 python_version = "3.8"

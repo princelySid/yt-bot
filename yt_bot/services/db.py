@@ -19,13 +19,10 @@ class Database:
     def create_tables(self, metadata):
         metadata.create_all(self.engine)
 
-    def scoped_session(self):
-        session_maker = sessionmaker(bind=self.engine)
-        return scoped_session(session_maker)
-
     @contextmanager
-    def get_tenant_session(self):
-        session = self.scoped_session()
+    def session(self):
+        session_maker = sessionmaker(bind=self.engine)
+        session = scoped_session(session_maker)
         try:
             yield session
         except Exception:
