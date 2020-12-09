@@ -1,25 +1,14 @@
-from yt_bot.models import Channel, Video
-from yt_bot.services import Database
 from os import getenv
 from sqlalchemy_utils import create_database, database_exists
 from yt_bot.config import Base
-from yt_bot.services import CSVService
+from yt_bot.models import Channel, Video
+from yt_bot.services import CSVService, Database
 
-def create_db():
-    '''
-    Creates the sqlite database.
-    '''
-    db_path = '/absolute/path/to/database.db'
-    db_uri = f'sqlite:////{db_path}'
-    if database_exists(db_uri):
-        return
+db_uri = getenv('DB_URI')
+if not database_exists(db_uri):
     create_database(db_uri)
 
-db = Database(getenv('DB_URI'))
-
-# Uncomment this section if you've not created your database
-# create_db()
-# Uncomment this section if you've not created your tables
+db = Database(db_uri)
 db.create_tables(Base.metadata)
 
 uncategorised = CSVService.read_csv_list_dict('data/ke_blog.csv')
