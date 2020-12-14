@@ -43,6 +43,15 @@ def channel_video_ids(session, video_orm_class, channel_id):
     return video_ids
 
 def format_feed(feed):
+    '''
+    Parses and formats the feed and returns the data that we need
+
+    Arguments:
+        feed {FeedParserDict} -- data from the feed parser
+
+    Returns:
+        list -- list of formatted data
+    '''
     if feed['status'] != 200:
         return
     formatted = []
@@ -58,10 +67,28 @@ def format_feed(feed):
     return formatted
 
 def filter_feed(feed, video_ids):
+    '''
+    Filters the feed for videos that are not part of video_ids
+
+    Arguments:
+        feed {list} -- list of formatted feed data
+        video_ids {set} -- video ids to check
+
+    Returns:
+        list|None -- feed with only new videos
+    '''
     if feed:
         return [video for video in feed if video['video_id'] not in video_ids]
     return
 
 def video_db(session, video_orm_class, feed):
+    '''
+    Adds video data to the database
+
+    Arguments:
+        session {SQLAlchemy Session} -- Session to connect to the database
+        video_orm_class {SQLAlchemy ORM Class} -- ORM object representing the video table
+        feed {list} -- video data to save
+    '''
     session.bulk_insert_mappings(video_orm_class, feed)
     session.commit()
