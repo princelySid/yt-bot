@@ -13,6 +13,10 @@ google-api-python-client = "*"
 yt-bot = {editable = true,path = "."}
 loguru = "*"
 pretty-errors = "*"
+sqlalchemy = "*"
+sqlalchemy-utils = "*"
+python-dateutil = "*"
+feedparser = "*"
 
 [requires]
 python_version = "3.8"
