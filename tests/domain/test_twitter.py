@@ -1,5 +1,5 @@
 import pytest
-from yt_bot.domain.twitter import tweet_text, tweet_video
+from yt_bot.domain.twitter import format_tweet_text, send_tweet
 from collections import namedtuple
 
 Channel = namedtuple('Channel', ['category', 'name'])
@@ -9,16 +9,16 @@ class FakeTwitter:
     def update_status(status):
         return
 
-def test_tweet_text():
+def test_format_tweet_text():
     my_channel = Channel('Music', 'princelySid')
     feed = [{'name': 'Coding a YouTube Twitter Bot', 'video_id': 'fake_video_id'}]
     expected = (
         '[MUSIC] New Video from princelySid: Coding a YouTube Twitter Bot '
         'https://www.youtube.com/watch?v=fake_video_id')
-    text = list(tweet_text(feed, my_channel))[0]
+    text = list(format_tweet_text(feed, my_channel))[0]
     assert text == expected
 
-def test_tweet_text_longer_than_230():
+def test_format_tweet_text_longer_than_230():
     my_channel = Channel('Music', 'princelySid')
     feed = [{
         'name': ('Coding a YouTube Twitter Bot using various python libraries like feedparser, '
@@ -27,8 +27,8 @@ def test_tweet_text_longer_than_230():
         'video_id': 'fake_video_id'}]
     expected = (
         '[MUSIC] New Video from princelySid https://www.youtube.com/watch?v=fake_video_id')
-    text = list(tweet_text(feed, my_channel))[0]
+    text = list(format_tweet_text(feed, my_channel))[0]
     assert text == expected
 
-def test_tweet_video():
-    assert tweet_video(FakeTwitter, 'My test tweet') == None
+def test_send_tweet():
+    assert send_tweet(FakeTwitter, 'My test tweet') == None

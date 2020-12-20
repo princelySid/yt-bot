@@ -1,6 +1,6 @@
 from yt_bot.config import logger
 
-def tweet_text(feed, channel):
+def format_tweet_text(feed, channel):
     ch_category = channel.category.upper()
     ch_name = channel.name
     for video in feed:
@@ -15,6 +15,6 @@ def tweet_text(feed, channel):
         yield text + video_link
 
 
-def tweet_video(twitter, text):
+def send_tweet(twitter, text):
     twitter.update_status(status=text)
     return None
