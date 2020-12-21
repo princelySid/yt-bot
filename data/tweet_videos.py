@@ -26,6 +26,7 @@ def twython_odj():
         raise
 
 with db.session() as session:
+    logger.info('Starting bot')
     channels = session.query(Channel)
     total = channels.count()
     twitter = twython_odj()
@@ -60,3 +61,4 @@ with db.session() as session:
                     logger.exception('Something went wrong')
                     raise
             video_db(session, Video, feed)
+    logger.info('Finished running bot')
