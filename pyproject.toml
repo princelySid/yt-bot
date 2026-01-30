@@ -9,6 +9,7 @@ dependencies = [
     "feedparser>=6.0.12",
     "google-api-python-client>=2.188.0",
     "loguru>=0.7.3",
+    "monsterui>=1.0.42",
     "pretty-errors>=1.2.25",
     "python-dateutil>=2.9.0.post0",
     "python-dotenv>=1.2.1",
