@@ -1,7 +1,8 @@
 from datetime import datetime
-from sqlalchemy import Column, String, Table, Text, DateTime, ForeignKey
+from sqlalchemy import Column, DateTime, String, Table, Text, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from yt_bot.config import Base
+
 
 class Video(Base):
     __tablename__ = 'videos'
@@ -11,5 +12,7 @@ class Video(Base):
     name = Column('name', String(120))
     description = Column('description', Text())
     published = Column('published', DateTime())
+    created_at = Column('created_at', DateTime())
+    updated_at = Column('updated_at', DateTime())
 
     channel = relationship('Channel', backref=backref('videos', order_by=published))

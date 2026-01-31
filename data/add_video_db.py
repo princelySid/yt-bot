@@ -1,4 +1,5 @@
 import feedparser
+from datetime import datetime
 from os import getenv
 from yt_bot.config import logger
 from yt_bot.domain.parser import (
@@ -33,5 +34,9 @@ with db.session() as session:
                     logger.info(f'New Channel: {_id} | {channel.name}')
             feed = [entry for entry in feed if entry['channel_id'] == channel_id]
         if feed:
+            now = datetime.utcnow()
+            for entry in feed:
+                entry["created_at"] = now
+                entry["updated_at"] = now
             logger.info(f'{idx} of {total} | {channel.name}: {len(feed)} videos' )
             video_db(session, Video, feed)
