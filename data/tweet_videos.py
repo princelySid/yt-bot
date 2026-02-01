@@ -12,7 +12,7 @@ from yt_bot.domain.parser import (
     get_video_ids_from_db,
 )
 from yt_bot.domain.twitter import format_tweet_text, send_tweet
-from yt_bot.models import Channel, Video
+from yt_bot.models import Channel, UnknownChannel, Video
 from yt_bot.services import Database
 
 db = Database(getenv("DB_URI"))
@@ -53,33 +53,53 @@ def fetch_filtered_feed(session, channel_id):
 
 def discover_new_channels(session, feed, channel):
     """
-    Log new channels found in feed (e.g. VEVO) and filter feed to only
-    entries from the current channel.
+    Log new channels found in feed (e.g. VEVO)
     Args:
         session: SQLAlchemy session
         feed: List of videos
         channel: Channel object
-
-    Returns:
-        List of videos from the current channel
     """
     if not feed:
-        return []
-    channel_id = channel.channel_id
-    channel_ids = set()
-    for entry in feed:
-        is_diff = entry["channel_id"] != channel_id
-        is_new = entry["channel_id"] not in channel_ids
-        is_in_db = (
-            session.query(Channel)
-            .filter(Channel.channel_id == entry["channel_id"])
-            .first()
+        return
+    source_channel_id = channel.channel_id
+    unknown_channel_ids = {
+        entry["channel_id"]
+        for entry in feed
+        if entry.get("channel_id") and entry["channel_id"] != source_channel_id
+    }
+    if not unknown_channel_ids:
+        return
+
+    existing_channel_ids = {
+        row[0]
+        for row in session.query(Channel.channel_id)
+        .filter(Channel.channel_id.in_(unknown_channel_ids))
+        .all()
+    }
+    existing_unknown_ids = {
+        row[0]
+        for row in session.query(UnknownChannel.channel_id)
+        .filter(UnknownChannel.channel_id.in_(unknown_channel_ids))
+        .all()
+    }
+    new_channel_ids = unknown_channel_ids - existing_channel_ids - existing_unknown_ids
+    if not new_channel_ids:
+        return
+
+    session.add_all(
+        [
+            UnknownChannel(channel_id=new_channel_id, name=channel.name)
+            for new_channel_id in sorted(new_channel_ids)
+        ]
+    )
+    session.commit()
+
+    for new_channel_id in sorted(new_channel_ids):
+        logger.info(
+            "New Channel from %s: https://www.youtube.com/channel/%s",
+            channel.name,
+            new_channel_id,
         )
-        if is_diff and is_new and not is_in_db:
-            channel_ids.add(entry["channel_id"])
-            logger.info(
-                f"New Channel: {channel.name} - https://www.youtube.com/channel/{entry['channel_id']}"
-            )
 
 
 def tweet_videos(twitter, feed, channel):
@@ -102,7 +122,7 @@ def run_bot():
 
         for idx, channel in enumerate(channels, start=1):
             feed = fetch_filtered_feed(session, channel.channel_id)
-            feed = discover_new_channels(session, feed, channel)
+            discover_new_channels(session, feed, channel)
             feed = [
                 entry for entry in feed if entry["channel_id"] == channel.channel_id
             ]
