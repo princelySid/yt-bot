@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from os import getenv
 
 import feedparser
@@ -31,7 +31,7 @@ with db.session() as session:
         if feed:
             channel_ids = set()
             for entry in feed:
-                now = datetime.now(datetime.timezone.utc)
+                now = datetime.now(timezone.utc)
                 is_diff = entry["channel_id"] != channel_id
                 is_new = entry["channel_id"] not in channel_ids
                 is_in_db = (
