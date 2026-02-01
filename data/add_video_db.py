@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from os import getenv
 
 import feedparser
+from tqdm import tqdm
 
 from yt_bot.config import logger
 from yt_bot.domain.parser import (
@@ -19,7 +20,7 @@ db = Database(getenv("DB_URI"))
 with db.session() as session:
     channels = session.query(Channel)
     total = channels.count()
-    for idx, channel in enumerate(channels, start=1):
+    for channel in tqdm(channels, total=total, desc="Adding videos to database"):
         channel_id = channel.channel_id
         video_ids = get_video_ids_from_db(session, Video, channel_id)
         rss_link = get_rss_feed(channel_id)
@@ -46,5 +47,5 @@ with db.session() as session:
                 entry["created_at"] = now
                 entry["updated_at"] = now
             feed = [entry for entry in feed if entry["channel_id"] == channel_id]
-            logger.info(f"{idx} of {total} | {channel.name}: {len(feed)} videos")
-            add_videos_to_db(session, Video, feed)
+            if feed:
+                add_videos_to_db(session, Video, feed)
