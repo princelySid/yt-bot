@@ -9,4 +9,4 @@ We're going to do this in roughly 8 steps:
 7. Save link to tweet, video in database
 8. Check every 30 minutes if there's a new video, if yes start from 4.
 
-I'm going to try document this all on [my blog](sidneyochieng.co.ke) so follow along over there.
+I'm going to try document this all on [my blog](https://sidneyochieng.co.ke/) so follow along over there.
