@@ -1,7 +1,7 @@
 from os import getenv
 
 import feedparser
-from twython import Twython, TwythonAuthError, TwythonError
+import tweepy
 
 from yt_bot.config import logger
 from yt_bot.domain.parser import (
@@ -18,18 +18,20 @@ from yt_bot.services import Database
 db = Database(getenv("DB_URI"))
 
 
-def twython_odj():
-    APP_KEY = getenv("TW_API_KEY")
-    APP_SECRET = getenv("TW_API_SECRET")
+def tweepy_obj():
+    API_KEY = getenv("TW_API_KEY")
+    API_SECRET = getenv("TW_API_SECRET")
     OAUTH_TOKEN = getenv("TW_OAUTH_TOKEN")
     OAUTH_SECRET = getenv("TW_OAUTH_SECRET")
     try:
-        return Twython(APP_KEY, APP_SECRET, OAUTH_TOKEN, OAUTH_SECRET)
-    except TwythonAuthError:
+        return tweepy.Client(
+            consumer_key=API_KEY,
+            consumer_secret=API_SECRET,
+            access_token=OAUTH_TOKEN,
+            access_token_secret=OAUTH_SECRET,
+        )
+    except tweepy.errors.TweepyException:
         logger.exception("Could not authenticate your app, check your keys")
-        raise
-    except TwythonError:
-        logger.exception("Something went wrong")
         raise
 
 
@@ -37,7 +39,7 @@ with db.session() as session:
     logger.info("Starting bot")
     channels = session.query(Channel)
     total = channels.count()
-    twitter = twython_odj()
+    twitter = tweepy_obj()
 
     for idx, channel in enumerate(channels, start=1):
         channel_id = channel.channel_id
