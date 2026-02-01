@@ -33,7 +33,7 @@ de_music = [
 ]
 music.extend(de_music)
 
-now = datetime.utcnow()
+now = datetime.now(datetime.timezone.utc)
 for row in music:
     row["created_at"] = now
     row["updated_at"] = now
