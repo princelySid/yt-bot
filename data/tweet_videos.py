@@ -131,8 +131,9 @@ def run_bot():
 
             if feed:
                 logger.info(f"{idx} of {total} | {channel.name}: {len(feed)} videos")
-                latest_video = feed[-1]
                 add_videos_to_db(session, Video, feed)
+                # Only tweet the latest video
+                latest_video = feed[-1]
                 tweet_videos(twitter, [latest_video], channel)
 
         logger.info("Finished running bot")
