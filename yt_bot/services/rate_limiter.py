@@ -1,6 +1,8 @@
 from datetime import date
 from functools import wraps
 
+from yt_bot.config import logger
+
 
 def daily_rate_limit(max_calls, session, model):
     def decorator(func):
@@ -16,9 +18,8 @@ def daily_rate_limit(max_calls, session, model):
                 )
                 if usage_stat:
                     if usage_stat.count >= max_calls:
-                        raise Exception(
-                            f"Rate limit exceeded for {task_name} on {today}"
-                        )
+                        logger.error(f"Rate limit exceeded for {task_name} on {today}")
+                        return
                     usage_stat.count += 1
                 else:
                     usage_stat = model(task_name=task_name, day=today, count=1)

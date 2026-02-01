@@ -109,9 +109,9 @@ def tweet_videos(twitter, feed, channel):
     for text in texts:
         try:
             send_tweet(twitter, text)
-        except tweepy.errors.TweepyException:
-            logger.exception("Something went wrong")
-            raise
+        except tweepy.errors.TweepyException as e:
+            logger.error(f"Something went wrong: {e}")
+            return
 
 
 def run_bot():

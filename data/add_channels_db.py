@@ -4,7 +4,7 @@ from os import getenv
 from sqlalchemy_utils import create_database, database_exists
 
 from yt_bot.config import Base
-from yt_bot.models import Channel, Video
+from yt_bot.models import Channel, UnknownChannel, UsageStat, Video
 from yt_bot.services import CSVService, Database
 
 db_uri = getenv("DB_URI")
