@@ -118,3 +118,5 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+
+.DS_Store

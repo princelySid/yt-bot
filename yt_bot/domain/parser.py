@@ -1,4 +1,4 @@
-from dateutil.parser import parse
+from dateutil.parser import parse as parse_date
 
 
 def get_rss_feed(channel_id):
@@ -67,7 +67,7 @@ def format_feed(feed):
         f_entry["channel_id"] = entry.get("yt_channelid")
         f_entry["name"] = entry.get("title")
         f_entry["description"] = entry.get("summary")
-        f_entry["published"] = parse(entry.get("published"))
+        f_entry["published"] = parse_date(entry.get("published"))
         formatted.append(f_entry)
 
     return formatted

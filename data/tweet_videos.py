@@ -12,8 +12,8 @@ from yt_bot.domain.parser import (
     get_video_ids_from_db,
 )
 from yt_bot.domain.twitter import format_tweet_text, send_tweet
-from yt_bot.models import Channel, UnknownChannel, Video
-from yt_bot.services import Database
+from yt_bot.models import Channel, UnknownChannel, UsageStat, Video
+from yt_bot.services import Database, daily_rate_limit
 
 db = Database(getenv("DB_URI"))
 
@@ -102,8 +102,9 @@ def discover_new_channels(session, feed, channel):
         )
 
 
+@daily_rate_limit(max_calls=17, session=db.session(), model=UsageStat)
 def tweet_videos(twitter, feed, channel):
-    """Format, tweet, and save videos to DB."""
+    """Format and tweet videos."""
     texts = format_tweet_text(feed, channel)
     for text in texts:
         try:
@@ -123,13 +124,16 @@ def run_bot():
         for idx, channel in enumerate(channels, start=1):
             feed = fetch_filtered_feed(session, channel.channel_id)
             discover_new_channels(session, feed, channel)
-            feed = [
-                entry for entry in feed if entry["channel_id"] == channel.channel_id
-            ]
+            feed = sorted(
+                [entry for entry in feed if entry["channel_id"] == channel.channel_id],
+                key=lambda entry: entry["published"],
+            )
+
             if feed:
                 logger.info(f"{idx} of {total} | {channel.name}: {len(feed)} videos")
+                latest_video = feed[-1]
                 add_videos_to_db(session, Video, feed)
-                tweet_videos(twitter, feed, channel)
+                tweet_videos(twitter, [latest_video], channel)
 
         logger.info("Finished running bot")
 
