@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, String, Text
 
@@ -12,9 +12,5 @@ class Channel(Base):
     name = Column("name", String(120))
     description = Column("description", Text())
     category = Column("category", String(20), index=True, nullable=False)
-    created_at = Column(
-        "created_at", DateTime(), default=datetime.now(datetime.timezone.utc)
-    )
-    updated_at = Column(
-        "updated_at", DateTime(), default=datetime.now(datetime.timezone.utc)
-    )
+    created_at = Column("created_at", DateTime(), default=datetime.now(timezone.utc))
+    updated_at = Column("updated_at", DateTime(), default=datetime.now(timezone.utc))

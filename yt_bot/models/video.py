@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, Table, Text
 from sqlalchemy.orm import backref, relationship
@@ -14,11 +14,7 @@ class Video(Base):
     name = Column("name", String(120))
     description = Column("description", Text())
     published = Column("published", DateTime())
-    created_at = Column(
-        "created_at", DateTime(), default=datetime.now(datetime.timezone.utc)
-    )
-    updated_at = Column(
-        "updated_at", DateTime(), default=datetime.now(datetime.timezone.utc)
-    )
+    created_at = Column("created_at", DateTime(), default=datetime.now(timezone.utc))
+    updated_at = Column("updated_at", DateTime(), default=datetime.now(timezone.utc))
 
     channel = relationship("Channel", backref=backref("videos", order_by=published))

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from os import getenv
 
 from sqlalchemy_utils import create_database, database_exists
@@ -33,7 +33,7 @@ de_music = [
 ]
 music.extend(de_music)
 
-now = datetime.now(datetime.timezone.utc)
+now = datetime.now(timezone.utc)
 for row in music:
     row["created_at"] = now
     row["updated_at"] = now
