@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from os import getenv
 
 from sqlalchemy_utils import create_database, database_exists
 
 from yt_bot.config import Base
-from yt_bot.models import Channel, Video
+from yt_bot.models import Channel, UnknownChannel, UsageStat, Video
 from yt_bot.services import CSVService, Database
 
 db_uri = getenv("DB_URI")
@@ -33,7 +33,7 @@ de_music = [
 ]
 music.extend(de_music)
 
-now = datetime.now(datetime.timezone.utc)
+now = datetime.now(timezone.utc)
 for row in music:
     row["created_at"] = now
     row["updated_at"] = now
