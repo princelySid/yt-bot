@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from os import getenv
 
@@ -15,13 +16,14 @@ from yt_bot.domain.parser import (
 from yt_bot.models import Channel, Video
 from yt_bot.services import Database
 
+MAX_WORKERS = 5  # Limit concurrent RSS fetches to avoid hammering YouTube
+
 db = Database(getenv("DB_URI"))
 
-with db.session() as session:
-    channels = session.query(Channel)
-    total = channels.count()
-    for channel in tqdm(channels, total=total, desc="Adding videos to database"):
-        channel_id = channel.channel_id
+
+def process_channel(db_instance: Database, channel_id: str, channel_name: str) -> None:
+    """Process a single channel: fetch RSS, filter new videos, add to DB."""
+    with db_instance.session() as session:
         video_ids = get_video_ids_from_db(session, Video, channel_id)
         rss_link = get_rss_feed(channel_id)
         feed = format_feed(feedparser.parse(rss_link))
@@ -43,9 +45,27 @@ with db.session() as session:
                 if is_diff and is_new and not is_in_db:
                     channel_ids.add(entry["channel_id"])
                     _id = entry["channel_id"]
-                    logger.info(f"New Channel: {_id} | {channel.name}")
+                    logger.info(f"New Channel: {_id} | {channel_name}")
                 entry["created_at"] = now
                 entry["updated_at"] = now
             feed = [entry for entry in feed if entry["channel_id"] == channel_id]
             if feed:
                 add_videos_to_db(session, Video, feed)
+
+
+with db.session() as session:
+    channels = [(c.channel_id, c.name) for c in session.query(Channel).all()]
+    total = len(channels)
+
+with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+    futures = {
+        executor.submit(process_channel, db, channel_id, channel_name): (
+            channel_id,
+            channel_name,
+        )
+        for channel_id, channel_name in channels
+    }
+    for future in tqdm(
+        as_completed(futures), total=total, desc="Adding videos to database"
+    ):
+        future.result()  # Raise any exception from the worker
