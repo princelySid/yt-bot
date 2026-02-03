@@ -4,26 +4,31 @@ from functools import wraps
 from yt_bot.config import logger
 
 
-def daily_rate_limit(max_calls, session, model):
+def daily_rate_limit(max_calls, get_session, model):
+    """get_session: callable returning a context manager that yields a session (e.g. db.session)."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             today = date.today().strftime("%Y-%m-%d")
             task_name = func.__name__
-            with session.begin():
-                usage_stat = (
-                    session.query(model)
-                    .filter(model.task_name == task_name, model.day == today)
-                    .first()
-                )
-                if usage_stat:
-                    if usage_stat.count >= max_calls:
-                        logger.error(f"Rate limit exceeded for {task_name} on {today}")
-                        return
-                    usage_stat.count += 1
-                else:
-                    usage_stat = model(task_name=task_name, day=today, count=1)
-                    session.add(usage_stat)
+            with get_session() as session:
+                with session.begin():
+                    usage_stat = (
+                        session.query(model)
+                        .filter(model.task_name == task_name, model.day == today)
+                        .first()
+                    )
+                    if usage_stat:
+                        if usage_stat.count >= max_calls:
+                            logger.error(
+                                f"Rate limit exceeded for {task_name} on {today}"
+                            )
+                            return
+                        usage_stat.count += 1
+                    else:
+                        usage_stat = model(task_name=task_name, day=today, count=1)
+                        session.add(usage_stat)
             return func(*args, **kwargs)
 
         return wrapper

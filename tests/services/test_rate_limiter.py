@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from datetime import date
 from unittest.mock import MagicMock, patch
 
@@ -21,11 +22,23 @@ def db_session(tmp_path):
     session.close()
 
 
+def _session_cm(session):
+    """Return a context manager that yields the given session."""
+
+    @contextmanager
+    def cm():
+        yield session
+
+    return cm
+
+
 @pytest.fixture
 def limited_func(db_session):
     """A function decorated with daily_rate_limit(max_calls=2)."""
 
-    @daily_rate_limit(max_calls=2, session=db_session, model=UsageStat)
+    @daily_rate_limit(
+        max_calls=2, get_session=lambda: _session_cm(db_session)(), model=UsageStat
+    )
     def my_task():
         return "done"
 
@@ -38,12 +51,11 @@ def test_allows_calls_under_limit(limited_func):
     assert limited_func() == "done"
 
 
-def test_raises_when_limit_exceeded(limited_func):
-    """Raises Exception when max_calls is exceeded."""
-    limited_func()
-    limited_func()
-    with pytest.raises(Exception, match="Rate limit exceeded for my_task"):
-        limited_func()
+def test_blocks_when_limit_exceeded(limited_func):
+    """Returns None and does not run the task when max_calls is exceeded."""
+    assert limited_func() == "done"
+    assert limited_func() == "done"
+    assert limited_func() is None  # rate limited, task not run
 
 
 def test_tracks_usage_in_database(limited_func, db_session):
@@ -64,7 +76,9 @@ def test_tracks_usage_in_database(limited_func, db_session):
 def test_uses_today_for_tracking(db_session):
     """Rate limit tracks usage by task name and current date."""
 
-    @daily_rate_limit(max_calls=1, session=db_session, model=UsageStat)
+    @daily_rate_limit(
+        max_calls=1, get_session=lambda: _session_cm(db_session)(), model=UsageStat
+    )
     def daily_task():
         return "ok"
 
@@ -72,14 +86,15 @@ def test_uses_today_for_tracking(db_session):
         mock_date.today.return_value = MagicMock()
         mock_date.today.return_value.strftime.return_value = "2025-02-01"
         assert daily_task() == "ok"
-        with pytest.raises(Exception, match="Rate limit exceeded for daily_task"):
-            daily_task()
+        assert daily_task() is None  # rate limited
 
 
 def test_preserves_function_metadata(db_session):
     """Decorator preserves the wrapped function's name and docstring."""
 
-    @daily_rate_limit(max_calls=10, session=db_session, model=UsageStat)
+    @daily_rate_limit(
+        max_calls=10, get_session=lambda: _session_cm(db_session)(), model=UsageStat
+    )
     def documented_task():
         """A well-documented task."""
         return 42

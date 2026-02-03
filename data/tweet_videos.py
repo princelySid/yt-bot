@@ -102,7 +102,7 @@ def discover_new_channels(session, feed, channel):
         )
 
 
-@daily_rate_limit(max_calls=17, session=db.session(), model=UsageStat)
+@daily_rate_limit(max_calls=17, get_session=db.session, model=UsageStat)
 def tweet_videos(twitter, feed, channel):
     """Format and tweet videos."""
     texts = format_tweet_text(feed, channel)
