@@ -10,3 +10,7 @@ We're going to do this in roughly 8 steps:
 8. Check every 30 minutes if there's a new video, if yes start from 4.
 
 I'm going to try document this all on [my blog](https://sidneyochieng.co.ke/) so follow along over there.
+
+Other todos:
+- make it so it doesn't send out shorts
+- make it so it can only tweet one link per channel per day

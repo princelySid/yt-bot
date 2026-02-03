@@ -96,9 +96,7 @@ def discover_new_channels(session, feed, channel):
 
     for new_channel_id in sorted(new_channel_ids):
         logger.info(
-            "New Channel from %s: https://www.youtube.com/channel/%s",
-            channel.name,
-            new_channel_id,
+            f"New Channel from {channel.name}: https://www.youtube.com/channel/{new_channel_id}",
         )
 
 
