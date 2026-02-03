@@ -124,6 +124,8 @@ def run_bot():
         for idx, channel in enumerate(channels, start=1):
             feed = fetch_filtered_feed(session, channel.channel_id)
             discover_new_channels(session, feed, channel)
+            if not feed:
+                continue
             feed = sorted(
                 [entry for entry in feed if entry["channel_id"] == channel.channel_id],
                 key=lambda entry: entry["published"],
