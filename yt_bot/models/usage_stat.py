@@ -7,5 +7,5 @@ class UsageStat(Base):
     __tablename__ = "usage_stats"
 
     task_name = Column("task_name", String(50), primary_key=True)
-    day = Column("day", String(50), index=True, unique=True)
+    day = Column("day", String(50), primary_key=True)
     count = Column("count", Integer())
