@@ -62,6 +62,9 @@ def format_feed(feed):
         return
     formatted = []
     for entry in feed["entries"]:
+        link = (entry.get("link") or "").lower()
+        if "shorts" in link:
+            continue
         f_entry = {}
         f_entry["video_id"] = entry.get("yt_videoid")
         f_entry["channel_id"] = entry.get("yt_channelid")
