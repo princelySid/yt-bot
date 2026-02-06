@@ -3,12 +3,15 @@ Download subscriptions from my channel. Used an environment variable for this bu
 channel_id variable to any channel
 '''
 from os import getenv
+
 from dotenv import load_dotenv
-from yt_bot.services import CSVService,YoutubeService
+
+from data.paths import SUBSCRIPTIONS_CSV
+from yt_bot.services import CSVService, YoutubeService
 
 load_dotenv()
 
 yt = YoutubeService()
-channel_id = getenv('YT_CHANNEL_ID')
+channel_id = getenv("YT_CHANNEL_ID")
 my_subs = yt.get_channel_subscriptions(channel_id)
-CSVService.write_list_dict_to_csv(my_subs, 'my_subs.csv')
+CSVService.write_list_dict_to_csv(my_subs, str(SUBSCRIPTIONS_CSV))

@@ -120,3 +120,6 @@ bld/
 [Ll]og/
 
 .DS_Store
+.sesskey
+
+*/bot_data.db

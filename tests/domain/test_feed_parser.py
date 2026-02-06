@@ -1,15 +1,19 @@
 from collections import namedtuple
+from datetime import datetime, timezone
 from unittest import mock
 
 import pytest
 from dateutil.parser import parse
 
-from yt_bot.domain.parser import (
+import yt_bot.domain.feed_parser as feed_parser
+from yt_bot.domain.feed_parser import (
     add_videos_to_db,
+    fetch_new_channel_videos,
     filter_new_videos,
     format_feed,
     get_rss_feed,
     get_video_ids_from_db,
+    stamp_and_filter_feed,
     youtube_link,
 )
 
@@ -146,3 +150,69 @@ def test_video_db(formatted_feed):
     session = mock.Mock()
     add_videos_to_db(session, "orm_class", formatted_feed)
     session.bulk_insert_mappings.assert_called_with("orm_class", formatted_feed)
+
+
+def test_fetch_new_channel_videos(monkeypatch):
+    session = mock.Mock()
+    mock_get_video_ids = mock.Mock(return_value={"old_video"})
+    mock_get_rss = mock.Mock(return_value="rss://channel/feed")
+    mock_parse = mock.Mock(return_value={"status": 200, "entries": []})
+    mock_format = mock.Mock(
+        return_value=[
+            {"video_id": "old_video", "channel_id": "channel-1"},
+            {"video_id": "new_video", "channel_id": "channel-1"},
+        ]
+    )
+    mock_filter = mock.Mock(
+        return_value=[{"video_id": "new_video", "channel_id": "channel-1"}]
+    )
+
+    monkeypatch.setattr(feed_parser, "get_video_ids_from_db", mock_get_video_ids)
+    monkeypatch.setattr(feed_parser, "get_rss_feed", mock_get_rss)
+    monkeypatch.setattr(feed_parser.feedparser, "parse", mock_parse)
+    monkeypatch.setattr(feed_parser, "format_feed", mock_format)
+    monkeypatch.setattr(feed_parser, "filter_new_videos", mock_filter)
+
+    result = fetch_new_channel_videos(session, "channel-1")
+
+    assert result == [{"video_id": "new_video", "channel_id": "channel-1"}]
+    mock_get_video_ids.assert_called_once_with(session, feed_parser.Video, "channel-1")
+    mock_get_rss.assert_called_once_with("channel-1")
+    mock_parse.assert_called_once_with("rss://channel/feed")
+    mock_format.assert_called_once()
+    mock_filter.assert_called_once_with(mock_format.return_value, {"old_video"})
+
+
+def test_fetch_new_channel_videos_returns_empty_list_when_none(monkeypatch):
+    monkeypatch.setattr(feed_parser, "get_video_ids_from_db", mock.Mock(return_value=set()))
+    monkeypatch.setattr(feed_parser, "get_rss_feed", mock.Mock(return_value="rss://empty"))
+    monkeypatch.setattr(feed_parser.feedparser, "parse", mock.Mock(return_value={}))
+    monkeypatch.setattr(feed_parser, "format_feed", mock.Mock(return_value=[]))
+    monkeypatch.setattr(feed_parser, "filter_new_videos", mock.Mock(return_value=None))
+
+    assert fetch_new_channel_videos(mock.Mock(), "channel-2") == []
+
+
+def test_stamp_and_filter_feed():
+    now = datetime(2026, 2, 6, tzinfo=timezone.utc)
+    feed = [
+        {"video_id": "a", "channel_id": "chan-1"},
+        {"video_id": "b", "channel_id": "chan-2"},
+    ]
+
+    result = stamp_and_filter_feed(feed, "chan-1", now=now)
+
+    assert result == [
+        {
+            "video_id": "a",
+            "channel_id": "chan-1",
+            "created_at": now,
+            "updated_at": now,
+        }
+    ]
+    assert feed[1]["created_at"] == now
+    assert feed[1]["updated_at"] == now
+
+
+def test_stamp_and_filter_feed_empty_feed():
+    assert stamp_and_filter_feed([], "chan-1") == []

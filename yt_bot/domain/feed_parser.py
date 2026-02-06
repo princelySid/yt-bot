@@ -1,4 +1,9 @@
+from datetime import datetime, timezone
+
+import feedparser
 from dateutil.parser import parse as parse_date
+
+from yt_bot.models import Video
 
 
 def get_rss_feed(channel_id):
@@ -103,3 +108,24 @@ def add_videos_to_db(session, video_orm_class, feed):
     """
     session.bulk_insert_mappings(video_orm_class, feed)
     session.commit()
+
+
+def fetch_new_channel_videos(session, channel_id: str) -> list[dict]:
+    video_ids = get_video_ids_from_db(session, Video, channel_id)
+    rss_link = get_rss_feed(channel_id)
+    feed = format_feed(feedparser.parse(rss_link))
+    return filter_new_videos(feed, video_ids) or []
+
+
+def stamp_and_filter_feed(
+    feed: list[dict],
+    source_channel_id: str,
+    now: datetime | None = None,
+) -> list[dict]:
+    if not feed:
+        return []
+    now = now or datetime.now(timezone.utc)
+    for entry in feed:
+        entry["created_at"] = now
+        entry["updated_at"] = now
+    return [entry for entry in feed if entry["channel_id"] == source_channel_id]
