@@ -1,17 +1,13 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
 from os import getenv
 
-import feedparser
 from tqdm import tqdm
 
 from yt_bot.config import logger
-from yt_bot.domain.parser import (
+from yt_bot.domain.feed_parser import (
     add_videos_to_db,
-    filter_new_videos,
-    format_feed,
-    get_rss_feed,
-    get_video_ids_from_db,
+    fetch_new_channel_videos,
+    stamp_and_filter_feed,
 )
 from yt_bot.models import Channel, Video
 from yt_bot.services import Database
@@ -24,31 +20,22 @@ db = Database(getenv("DB_URI"))
 def process_channel(db_instance: Database, channel_id: str, channel_name: str) -> None:
     """Process a single channel: fetch RSS, filter new videos, add to DB."""
     with db_instance.session() as session:
-        video_ids = get_video_ids_from_db(session, Video, channel_id)
-        rss_link = get_rss_feed(channel_id)
-        feed = format_feed(feedparser.parse(rss_link))
-        feed = filter_new_videos(feed, video_ids)
-        # Next section is necessary to ensure that only videos from the channel go through
-        # especially for artist channels that may also have VEVO channels
-        # so this captures that
+        feed = fetch_new_channel_videos(session, channel_id)
         if feed:
-            channel_ids = set()
-            for entry in feed:
-                now = datetime.now(timezone.utc)
-                is_diff = entry["channel_id"] != channel_id
-                is_new = entry["channel_id"] not in channel_ids
+            other_channel_ids = {
+                entry["channel_id"]
+                for entry in feed
+                if entry.get("channel_id") and entry["channel_id"] != channel_id
+            }
+            for new_channel_id in sorted(other_channel_ids):
                 is_in_db = (
                     session.query(Channel)
-                    .filter(Channel.channel_id == entry["channel_id"])
+                    .filter(Channel.channel_id == new_channel_id)
                     .first()
                 )
-                if is_diff and is_new and not is_in_db:
-                    channel_ids.add(entry["channel_id"])
-                    _id = entry["channel_id"]
-                    logger.info(f"New Channel: {_id} | {channel_name}")
-                entry["created_at"] = now
-                entry["updated_at"] = now
-            feed = [entry for entry in feed if entry["channel_id"] == channel_id]
+                if not is_in_db:
+                    logger.info(f"New Channel: {new_channel_id} | {channel_name}")
+            feed = stamp_and_filter_feed(feed, channel_id)
             if feed:
                 add_videos_to_db(session, Video, feed)
 
