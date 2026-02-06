@@ -1,7 +1,7 @@
 from loguru import logger
 from os import getenv
 from sys import stderr
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 import pretty_errors
 
 Base = declarative_base()
