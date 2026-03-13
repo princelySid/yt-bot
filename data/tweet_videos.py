@@ -1,3 +1,4 @@
+import time
 from os import getenv
 
 import tweepy
@@ -38,11 +39,27 @@ def tweet_videos(twitter, feed, channel):
     """Format and tweet videos."""
     texts = format_tweet_text(feed, channel)
     for text in texts:
-        try:
-            send_tweet(twitter, text)
-        except tweepy.errors.TweepyException as e:
-            logger.error(f"Something went wrong: {e}")
-            return
+        retries = 3
+        for attempt in range(retries):
+            try:
+                send_tweet(twitter, text)
+                break
+            except (
+                tweepy.errors.TwitterServerError,
+                tweepy.errors.TooManyRequests,
+            ) as e:
+                if attempt < retries - 1:
+                    sleep_time = 2 ** attempt * 5
+                    logger.warning(
+                        f"Twitter API error: {e}. Retrying in {sleep_time} seconds..."
+                    )
+                    time.sleep(sleep_time)
+                else:
+                    logger.error(f"Failed after {retries} attempts: {e}")
+                    return
+            except tweepy.errors.TweepyException as e:
+                logger.error(f"Something went wrong: {e}")
+                return
 
 
 def run_bot():
